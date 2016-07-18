@@ -16,12 +16,12 @@ function expandJsonSchemas(ramlObj) {
         var schemaText = expandSchema(schema[objectKey]);
         schema[objectKey] = schemaText;
     }
-    
+
     for (var resourceIndex in ramlObj.resources) {
         var resource = ramlObj.resources[resourceIndex];
         ramlObj.resources[resourceIndex] = fixSchemaNodes(resource);
     }
-    
+
     return ramlObj;
 }
 
@@ -33,7 +33,7 @@ function fixSchemaNodes(node) {
     for (var keyIndex in keys) {
         var key = keys[keyIndex];
         var value = node[key];
-        if (key === "schema" && isJsonSchema(value)) {
+        if (key === "schema" && typeof(value) === 'string' && isJsonSchema(value)) {
             var schemaObj = JSON.parse(value);
             if (schemaObj.id && schemaObj.id in expandedSchemaCache) {
                 node[key] = JSON.stringify(expandedSchemaCache[schemaObj.id], null, 2);
@@ -97,13 +97,13 @@ function walkTree(basePath, node) {
         } else if (isArray(value)) {
             node[key] = walkArray(basePath, value);
         }
-    }    
-    
+    }
+
     //Merge an expanded ref into the node
     if (expandedRef != null) {
         mergeObjects(node, expandedRef);
     }
-    
+
     return node;
 }
 
@@ -132,33 +132,33 @@ function fetchRef(refUri) {
         if (httpUriRegex.test(refUri)) {
             //Read from HTTP connection
             var request = urllibSync.request;
-            var response = request(refUri, { timeout: 30000 });            
+            var response = request(refUri, { timeout: 30000 });
             if (response.status == 200) {
                 result = response.data;
             }
         } else {
             //Assume raw file path
             var filePath = refUri;
-            
+
             //Check for file:// formatted URI
             var fileRegexGroups = fileUriRegex.exec(refUri);
             if (fileRegexGroups != null && fileRegexGroups.length == 2) {
                 filePath = fileUriRegex.exec(refUri)[1];
             }
-            
+
             //Read file from normalized path
             result = fs.readFileSync(filePath).toString();
         }
-        
+
         if (result != null) {
             schemaHttpCache[refUri] = result;
         }
     }
-    
+
     if (result == null) {
         throw "fetchRef failed for URI:" + refUri;
     }
-    
+
     return result;
 }
 
